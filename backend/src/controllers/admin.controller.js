@@ -28,7 +28,7 @@ const addAlumni = asyncHandler(async (req, res) => {
   });
 
   const count = await AlumniDir.countDocuments();
-  newAlumni={...newAlumni.toObject(),totalAlumni : count};
+  newAlumni = { ...newAlumni.toObject(), totalAlumni: count };
 
   res
     .status(200)
@@ -52,6 +52,13 @@ const postEvent = asyncHandler(async (req, res) => {
   res.status(200).json(new Apiresponse(201, event, "Event posted Succesfully"));
 });
 
+const fetchDirec = asyncHandler(async (req, res) => {
+  const alumnis = await AlumniDir.find();
+  res
+    .status(200)
+    .json(new Apiresponse(201, alumnis, "Alumnis fetched succesfully"));
+});
+
 const totalAlumni = asyncHandler(async (req, res) => {
   const totalAlumni = await AlumniDir.countDocuments();
   const currentEvents = await Event.countDocuments({
@@ -64,4 +71,4 @@ const totalAlumni = asyncHandler(async (req, res) => {
       new Apiresponse(201, [totalAlumni, currentEvents], "fetched succesfully")
     );
 });
-export { addAlumni, postEvent, totalAlumni };
+export { addAlumni, postEvent, totalAlumni, fetchDirec };

@@ -1,6 +1,7 @@
 import { Router } from "express";
 import {
   addAlumni,
+  fetchDirec,
   postEvent,
   totalAlumni,
 } from "../controllers/admin.controller.js";
@@ -15,5 +16,6 @@ router.get("/", (req, res) => {
 router.route("/addAlumni").post(addAlumni);
 router.route("/postEvent").post(postEvent);
 router.route("/totalAlumni").get(totalAlumni);
+router.route("/direc").get(fetchDirec);
 
 export default router;

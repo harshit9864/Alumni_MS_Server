@@ -1,5 +1,4 @@
 import { Event } from "../models/event.model.js";
-import { ApiError } from "../utils/apiError.js";
 import { Apiresponse } from "../utils/apiResponse.js";
 import asyncHandler from "../utils/asyncHandler.js";
 
