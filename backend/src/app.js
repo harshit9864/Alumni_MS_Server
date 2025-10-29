@@ -12,4 +12,19 @@ app.use("/api", router);
 app.use("/events", eventRouter);
 app.use("/direc", dirRouter);
 
+app.use((err, req, res, next) => {
+  console.error("Error caught by middleware:", err);
+
+  // Fallbacks if custom error doesn’t have a status/message
+  const statusCode = err.statusCode || 500;
+  const message = err.message || "Internal Server Error";
+
+  // Always return JSON, never HTML
+  res.status(statusCode).json({
+    success: false,
+    statusCode,
+    message,
+  });
+});
+
 export { app };

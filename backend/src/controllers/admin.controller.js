@@ -19,7 +19,7 @@ const addAlumni = asyncHandler(async (req, res) => {
     throw new ApiError(409, "User with username or email exists");
   }
 
-  const newAlumni = await AlumniDir.create({
+  let newAlumni = await AlumniDir.create({
     fullName,
     batchYear,
     email,
@@ -27,9 +27,14 @@ const addAlumni = asyncHandler(async (req, res) => {
     company,
   });
 
+  // const count = await AlumniDir.countDocuments();
+  // newAlumni={...newAlumni.toObject(),totalAlumni : count};
+
   res
     .status(200)
-    .json(new Apiresponse(201, newAlumni, "Alumni created successfully"));
+    .json(
+      new Apiresponse(201, newAlumni, `Alumni created successfully`)
+    );
 });
 
 const postEvent = asyncHandler(async (req, res) => {
