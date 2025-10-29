@@ -27,14 +27,12 @@ const addAlumni = asyncHandler(async (req, res) => {
     company,
   });
 
-  // const count = await AlumniDir.countDocuments();
-  // newAlumni={...newAlumni.toObject(),totalAlumni : count};
+  const count = await AlumniDir.countDocuments();
+  newAlumni={...newAlumni.toObject(),totalAlumni : count};
 
   res
     .status(200)
-    .json(
-      new Apiresponse(201, newAlumni, `Alumni created successfully`)
-    );
+    .json(new Apiresponse(201, newAlumni, `Alumni created successfully`));
 });
 
 const postEvent = asyncHandler(async (req, res) => {
@@ -54,4 +52,16 @@ const postEvent = asyncHandler(async (req, res) => {
   res.status(200).json(new Apiresponse(201, event, "Event posted Succesfully"));
 });
 
-export { addAlumni, postEvent };
+const totalAlumni = asyncHandler(async (req, res) => {
+  const totalAlumni = await AlumniDir.countDocuments();
+  const currentEvents = await Event.countDocuments({
+    date: { $gte: new Date() },
+  });
+
+  res
+    .status(200)
+    .json(
+      new Apiresponse(201, [totalAlumni, currentEvents], "fetched succesfully")
+    );
+});
+export { addAlumni, postEvent, totalAlumni };
