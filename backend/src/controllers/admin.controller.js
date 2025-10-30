@@ -36,9 +36,9 @@ const addAlumni = asyncHandler(async (req, res) => {
 });
 
 const postEvent = asyncHandler(async (req, res) => {
-  const { title, date, content } = req.body;
+  const { title, date, content,time } = req.body;
 
-  const existedEvent = await Event.findOne({ title });
+  const existedEvent = await Event.findOne({ title,date });
   if (existedEvent) {
     throw new ApiError(409, "Event with same title already exist");
   }
@@ -47,6 +47,7 @@ const postEvent = asyncHandler(async (req, res) => {
     title,
     date: new Date(date),
     content,
+    time
   });
 
   res.status(200).json(new Apiresponse(201, event, "Event posted Succesfully"));
