@@ -15,23 +15,24 @@ const saveAndFetch = asyncHandler(async (req, res) => {
 
 const postBlog = asyncHandler(async (req, res) => {
   const { title, authorName, date, image, summary, content } = req.body;
-  // const { userId } = req.auth();
+  const { userId } = req.auth();
   if (
-      [title, authorName, date, image, summary, content].some(
-        (field) => field?.trim() === ""
-      )
-    ) {
-      throw new ApiError(400, "All fields are required");
-    }
-  const userId = 123;
+    [title, authorName, date, summary, content].some(
+      (field) => field?.trim() === ""
+    )
+  ) {
+    throw new ApiError(400, "All fields are required");
+  }
+  // const userId = 123;
+
   const blog = await Blog.create({
     title,
     authorId: userId,
-    authorName,
+    authorName: authorName.toUpperCase(),
     date: new Date(date),
     image: image?.url,
     summary,
-    content
+    content,
   });
 
   if (!blog) {
@@ -41,4 +42,14 @@ const postBlog = asyncHandler(async (req, res) => {
   res.status(200).json(new Apiresponse(201, blog, "blog posted succesfully"));
 });
 
-export { saveAndFetch,postBlog };
+const fetchBlogs = asyncHandler(async (req, res) => {
+  const { userId } = req.auth();
+
+  const blogs = await Blog.find({
+    authorId: userId,
+  });
+
+  res.status(200).json(new Apiresponse(201, blogs, "success"));
+});
+
+export { saveAndFetch, postBlog, fetchBlogs };
