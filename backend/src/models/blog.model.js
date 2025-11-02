@@ -6,6 +6,10 @@ const blogSchema = new mongoose.Schema(
       type: String,
       required: true,
     },
+    authorId: {
+      type: String,
+      required: true,
+    },
     authorName: {
       type: String,
       required: true,
@@ -16,13 +20,13 @@ const blogSchema = new mongoose.Schema(
     },
     image: {
       type: String, //cloudinary
-      required: true,
+      // required: true,
     },
     summary: {
       type: String,
       required: true,
     },
-    conntent: {
+    content: {
       type: String,
       required: true,
     },

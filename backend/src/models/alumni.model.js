@@ -6,16 +6,16 @@ const alumniSchema = new mongoose.Schema(
       type: String,
       required: true,
     },
-    eventsJoined: {
+    eventsJoined: [{
       type: mongoose.Schema.Types.ObjectId,
       ref: "Event",
-    },
-    mentorship: {
+    }],
+    mentorship: [{
       type: mongoose.Schema.Types.ObjectId,
       ref: "Mentorship",
-    },
+    }],
   },
   { timestamps: true }
 );
 
-export const Almuni = mongoose.model("Alumni", alumniSchema);
+export const Alumni = mongoose.model("Alumni", alumniSchema);
