@@ -52,4 +52,27 @@ const fetchBlogs = asyncHandler(async (req, res) => {
   res.status(200).json(new Apiresponse(201, blogs, "success"));
 });
 
-export { saveAndFetch, postBlog, fetchBlogs };
+const joinEvent = asyncHandler(async (req, res) => {
+  const { _id } = req.body;
+  console.log("req.auth:", req.auth);
+
+  const { userId } = req.auth();
+  try {
+    const alumni = await Alumni.findOneAndUpdate(
+      { clerkId: userId },
+      { $addToSet: { eventsJoined: _id } }, // $addToSet prevents duplicates
+      { new: true }
+    );
+    if (!alumni) {
+      throw new Error(alumni);
+    }
+    res
+      .status(200)
+      .json(new Apiresponse(201, alumni, "event joined succesfullly"));
+  } catch (error) {
+    console.log(error);
+    throw new ApiError(400, error);
+  }
+});
+
+export { saveAndFetch, postBlog, fetchBlogs, joinEvent };
