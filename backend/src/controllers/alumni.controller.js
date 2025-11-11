@@ -1,3 +1,4 @@
+import { clerkClient } from "@clerk/express";
 import { Alumni } from "../models/alumni.model.js";
 import { Blog } from "../models/blog.model.js";
 import { ApiError } from "../utils/apiError.js";
@@ -5,10 +6,13 @@ import { Apiresponse } from "../utils/apiResponse.js";
 import asyncHandler from "../utils/asyncHandler.js";
 
 const saveAndFetch = asyncHandler(async (req, res) => {
-  const { userId } = req.auth();
+  const { userId, sessionClaims } = req.auth();
   let user = await Alumni.findOne({ clerkId: userId });
   if (!user) {
-    user = await Alumni.create({ clerkId: userId });
+    user = await Alumni.create({
+      clerkId: userId,
+      email: sessionClaims.emailAddress,
+    });
   }
   res.status(200).json(new Apiresponse(201, user, "user created"));
 });
@@ -43,7 +47,9 @@ const postBlog = asyncHandler(async (req, res) => {
 });
 
 const fetchBlogs = asyncHandler(async (req, res) => {
-  const { userId } = req.auth();
+  const { userId, sessionClaims } = req.auth();
+  // const user = await clerkClient.users.getUser(userId);
+  console.log(sessionClaims.emailAddress);
 
   const blogs = await Blog.find({
     authorId: userId,

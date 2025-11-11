@@ -6,14 +6,22 @@ const alumniSchema = new mongoose.Schema(
       type: String,
       required: true,
     },
-    eventsJoined: [{
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "Event",
-    }],
-    mentorship: [{
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "Mentorship",
-    }],
+    email: {
+      type: String,
+      required: true,
+    },
+    eventsJoined: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Event",
+      },
+    ],
+    mentorship: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Mentorship",
+      },
+    ],
   },
   { timestamps: true }
 );
