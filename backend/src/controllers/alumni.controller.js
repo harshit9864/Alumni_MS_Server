@@ -4,6 +4,7 @@ import { Blog } from "../models/blog.model.js";
 import { ApiError } from "../utils/apiError.js";
 import { Apiresponse } from "../utils/apiResponse.js";
 import asyncHandler from "../utils/asyncHandler.js";
+import { Mentorship } from "../models/mentorship.model.js";
 
 const saveAndFetch = asyncHandler(async (req, res) => {
   const { userId, sessionClaims } = req.auth();
@@ -81,4 +82,57 @@ const joinEvent = asyncHandler(async (req, res) => {
   }
 });
 
-export { saveAndFetch, postBlog, fetchBlogs, joinEvent };
+const fetchMentorships = asyncHandler(async (req, res) => {
+  const { userId } = req.auth();
+
+  const alumni = await Alumni.findOne({ clerkId: userId });
+  const email = alumni.email;
+  const mentorships = await Mentorship.aggregate([
+    // 1️⃣ Match mentorships with given alumni email
+    {
+      $match: { alumniMail: email },
+    },
+
+    // 2️⃣ Lookup student details from Student collection
+    {
+      $lookup: {
+        from: "students", // collection name in MongoDB
+        localField: "studentName", // field in Mentorship
+        foreignField: "_id", // field in Student
+        as: "studentInfo", // output field
+      },
+    },
+
+    // 3️⃣ Unwind the array (each mentorship has exactly one student)
+    {
+      $unwind: "$studentInfo",
+    },
+
+    // 4️⃣ Project only the fields we need
+    {
+      $project: {
+        _id: 1,
+        purpose: 1,
+        date: 1,
+        status: 1,
+        createdAt: 1,
+        "studentInfo.fullName": 1,
+        "studentInfo.email": 1,
+      },
+    },
+
+    // 5️⃣ Optional: Sort (latest first)
+    {
+      $sort: { createdAt: -1 },
+    },
+  ]);
+  console.log(mentorships);
+
+  res
+    .status(200)
+    .json(
+      new Apiresponse(201, mentorships, "Mentorships successfully fetched")
+    );
+});
+
+export { saveAndFetch, postBlog, fetchBlogs, joinEvent, fetchMentorships };
