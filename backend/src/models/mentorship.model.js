@@ -6,9 +6,9 @@ const mentorshipSchema = new mongoose.Schema(
       type: mongoose.Schema.Types.ObjectId,
       ref: "Student",
     },
-    alumniName: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "Alumni",
+    alumniMail: {
+      type: String,
+      required: true,
     },
     purpose: {
       type: String,
