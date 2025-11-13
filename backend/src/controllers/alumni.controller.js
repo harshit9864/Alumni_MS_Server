@@ -135,4 +135,36 @@ const fetchMentorships = asyncHandler(async (req, res) => {
     );
 });
 
-export { saveAndFetch, postBlog, fetchBlogs, joinEvent, fetchMentorships };
+const updateStatus = asyncHandler(async (req, res) => {
+  const { userId } = req.auth();
+  const { id } = req.params;
+  const { status } = req.body;
+
+  // Update mentorship
+  const updatedMentorship = await Mentorship.findByIdAndUpdate(
+    id,
+    { status },
+    { new: true }
+  );
+
+  const alumni = await Alumni.findOneAndUpdate(
+    {
+      clerkId: userId,
+    },
+    { $push: { mentorship: id } },
+    { new: true }
+  );
+
+  res
+    .status(200)
+    .json(new Apiresponse(201, updatedMentorship, "updated Successfully"));
+});
+
+export {
+  saveAndFetch,
+  postBlog,
+  fetchBlogs,
+  joinEvent,
+  fetchMentorships,
+  updateStatus,
+};
