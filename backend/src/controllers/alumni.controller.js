@@ -5,6 +5,7 @@ import { ApiError } from "../utils/apiError.js";
 import { Apiresponse } from "../utils/apiResponse.js";
 import asyncHandler from "../utils/asyncHandler.js";
 import { Mentorship } from "../models/mentorship.model.js";
+import { sendEmail } from "../utils/sendEmail.js";
 
 const saveAndFetch = asyncHandler(async (req, res) => {
   const { userId, sessionClaims } = req.auth();
@@ -145,7 +146,7 @@ const updateStatus = asyncHandler(async (req, res) => {
     id,
     { status },
     { new: true }
-  );
+  ).populate("studentName");
 
   const alumni = await Alumni.findOneAndUpdate(
     {
@@ -153,6 +154,15 @@ const updateStatus = asyncHandler(async (req, res) => {
     },
     { $push: { mentorship: id } },
     { new: true }
+  );
+
+  const studentEmail = updatedMentorship.studentName.email;
+  const studentName = updatedMentorship.studentName.fullName;
+
+  await sendEmail(
+    studentEmail,
+    `Your Mentorship Request Was ${status}`,
+    `Hi ${studentName},\n\nYour mentorship request has been ${status} by the ${alumni.email}.\n\nPurpose: ${updatedMentorship.purpose}\n\nBest regards,\nMentorship Team`
   );
 
   res

@@ -34,6 +34,9 @@ const addMentorship = asyncHandler(async (req, res) => {
   const { email, purpose } = req.body;
   const alumni = await Alumni.findOne({ email });
   const student = await Student.findOne({ clerkId: userId });
+  if(!alumni){
+    throw new ApiError(401,"Alumni has not registered yet")
+  }
   const find = await Mentorship.findOne({
     studentName: student._id,
     alumniMail: alumni.email,
