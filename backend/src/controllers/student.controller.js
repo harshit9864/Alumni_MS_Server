@@ -5,6 +5,7 @@ import { Student } from "../models/student.model.js";
 import { ApiError } from "../utils/apiError.js";
 import { Apiresponse } from "../utils/apiResponse.js";
 import asyncHandler from "../utils/asyncHandler.js";
+import { User } from "../models/user.model.js";
 
 const addstudent = asyncHandler(async (req, res) => {
   const { userId } = req.auth();
@@ -21,6 +22,22 @@ const addstudent = asyncHandler(async (req, res) => {
     email,
   });
 
+  const user = await User.findOne({ userId });
+  if (!user) {
+    const newUser = await User.create({
+      clerkId: userId,
+      fullName,
+      email,
+      role: "student", // student or alumni
+    });
+
+    await Student.findOneAndUpdate(
+      { email },
+      { userId: newUser._id },
+      { new: true }
+    );
+  }
+
   res
     .status(200)
     .json(new Apiresponse(201, student, "student added succesfully"));
@@ -34,8 +51,8 @@ const addMentorship = asyncHandler(async (req, res) => {
   const { email, purpose } = req.body;
   const alumni = await Alumni.findOne({ email });
   const student = await Student.findOne({ clerkId: userId });
-  if(!alumni){
-    throw new ApiError(401,"Alumni has not registered yet")
+  if (!alumni) {
+    throw new ApiError(401, "Alumni has not registered yet");
   }
   const find = await Mentorship.findOne({
     studentName: student._id,
@@ -59,6 +76,7 @@ const addMentorship = asyncHandler(async (req, res) => {
 
 const fetchMentorships = asyncHandler(async (req, res) => {
   const { userId } = req.auth();
+  console.log(userId);
   if (!userId) {
     throw new ApiError(401, "not authenticated");
   }
@@ -66,7 +84,7 @@ const fetchMentorships = asyncHandler(async (req, res) => {
     clerkId: userId,
   });
   const studentId = student._id;
-  console.log(studentId);
+  
 
   // Ensure it's a valid ObjectId
   if (!mongoose.Types.ObjectId.isValid(studentId)) {
@@ -75,46 +93,85 @@ const fetchMentorships = asyncHandler(async (req, res) => {
 
   // Aggregation pipeline
   const mentorships = await Mentorship.aggregate([
+    // 1️⃣ Match mentorships of logged-in student
     {
-      $match: { studentName: new mongoose.Types.ObjectId(studentId) },
-    },
-    {
-      $lookup: {
-        from: "alumnidirs", // collection name (check in DB)
-        localField: "alumniMail", // field in Mentorship
-        foreignField: "email", // field in Alumni
-        as: "alumniInfo",
+      $match: {
+        studentName: new mongoose.Types.ObjectId(studentId),
       },
     },
+
+    // 2️⃣ Lookup alumni profile info (alumnidirs)
+    {
+      $lookup: {
+        from: "alumnidirs", // ✅ public alumni info
+        localField: "alumniMail",
+        foreignField: "email",
+        as: "alumniProfile",
+      },
+    },
+
     {
       $unwind: {
-        path: "$alumniInfo",
+        path: "$alumniProfile",
         preserveNullAndEmptyArrays: true,
       },
     },
+
+    // 3️⃣ Lookup alumni auth/user mapping (alumnis)
     {
       $lookup: {
-        from: "students", // collection name for students
+        from: "alumnis", // ✅ auth-linked alumni
+        localField: "alumniMail",
+        foreignField: "email",
+        as: "alumniAuth",
+      },
+    },
+
+    {
+      $unwind: {
+        path: "$alumniAuth",
+        preserveNullAndEmptyArrays: true,
+      },
+    },
+
+    // 4️⃣ Lookup student info (optional)
+    {
+      $lookup: {
+        from: "students",
         localField: "studentName",
         foreignField: "_id",
         as: "studentInfo",
       },
     },
+
     {
       $unwind: "$studentInfo",
     },
+
+    // 5️⃣ Final projection (🔥 includes alumniUserId)
     {
       $project: {
         purpose: 1,
         date: 1,
         status: 1,
-        "studentInfo.name": 1,
-        "studentInfo.email": 1,
-        "alumniInfo.fullName": 1,
-        "alumniInfo.email": 1,
+
+        // ✅ THIS is what your chat needs
+        alumniUserId: "$alumniAuth.userId",
+
+        // display info
+        alumniInfo: {
+          fullName: "$alumniProfile.fullName",
+          email: "$alumniProfile.email",
+        },
+
+        studentInfo: {
+          name: "$studentInfo.name",
+          email: "$studentInfo.email",
+        },
       },
     },
   ]);
+  console.log(mentorships);
 
   res
     .status(200)

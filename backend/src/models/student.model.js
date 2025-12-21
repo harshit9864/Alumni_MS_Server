@@ -2,6 +2,9 @@ import mongoose from "mongoose";
 
 const studentSchema = new mongoose.Schema(
   {
+    // Student.js
+    userId: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
+
     clerkId: {
       type: String,
     },

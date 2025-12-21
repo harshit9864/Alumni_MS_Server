@@ -2,6 +2,9 @@ import mongoose from "mongoose";
 
 const alumniSchema = new mongoose.Schema(
   {
+    // Alumni.js
+    userId: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
+
     clerkId: {
       type: String,
       required: true,

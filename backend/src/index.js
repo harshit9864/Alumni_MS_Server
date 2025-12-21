@@ -1,17 +1,29 @@
 import dotenv from "dotenv";
+import http from "http";
 import { connectDB } from "./database/index.js";
 import { app } from "./app.js";
-dotenv.config({ path: "./.env" }); // adjust path if needed
+import { initSocket } from "./socket.js";
+
+dotenv.config({ path: "./.env" });
+
 const PORT = process.env.PORT || 4000;
 
 const startServer = async () => {
   try {
     await connectDB();
-    app.listen(PORT, () => {
-      console.log(`✅ Server is running at http://localhost:${PORT}`);
+
+    // Create ONE http server
+    const server = http.createServer(app);
+
+    // Initialize socket.io on the SAME server
+    initSocket(server);
+
+    // Start server ONCE
+    server.listen(PORT, () => {
+      console.log(`✅ Server running at http://localhost:${PORT}`);
     });
   } catch (err) {
-    console.error("❌ DB connection failed:", err);
+    console.error("❌ Server startup failed:", err);
     process.exit(1);
   }
 };

@@ -4,6 +4,7 @@ import adminRouter from "./routes/admin.route.js";
 import eventRouter from "./routes/event.route.js";
 import alumniRouter from "./routes/alumni.route.js";
 import studentRouter from "./routes/student.route.js";
+import messageRouter from "./routes/messages.route.js";
 
 const app = express();
 app.use(cors());
@@ -13,6 +14,7 @@ app.use("/api", adminRouter);
 app.use("/events", eventRouter);
 app.use("/alumni", alumniRouter);
 app.use("/student", studentRouter);
+app.use("/api/messages", messageRouter);
 
 app.use((err, req, res, next) => {
   console.error("Error caught by middleware:", err);

@@ -1,4 +1,3 @@
-import { clerkClient } from "@clerk/express";
 import { Alumni } from "../models/alumni.model.js";
 import { Blog } from "../models/blog.model.js";
 import { ApiError } from "../utils/apiError.js";
@@ -6,6 +5,7 @@ import { Apiresponse } from "../utils/apiResponse.js";
 import asyncHandler from "../utils/asyncHandler.js";
 import { Mentorship } from "../models/mentorship.model.js";
 import { sendEmail } from "../utils/sendEmail.js";
+import { User } from "../models/user.model.js";
 
 const saveAndFetch = asyncHandler(async (req, res) => {
   const { userId, sessionClaims } = req.auth();
@@ -16,6 +16,24 @@ const saveAndFetch = asyncHandler(async (req, res) => {
       email: sessionClaims.emailAddress,
     });
   }
+
+  const newUser = await User.findOne({ clerkId: userId });
+  if (!newUser) {
+    const newUser = await User.create({
+      clerkId: userId,
+      fullName: sessionClaims.emailAddress,
+      email: sessionClaims.emailAddress,
+      role: "alumni", // student or alumni
+    });
+
+    await Alumni.findOneAndUpdate(
+      { email },
+      { userId: newUser._id },
+      { new: true }
+    );
+    3;
+  }
+
   res.status(200).json(new Apiresponse(201, user, "user created"));
 });
 
@@ -119,6 +137,7 @@ const fetchMentorships = asyncHandler(async (req, res) => {
         createdAt: 1,
         "studentInfo.fullName": 1,
         "studentInfo.email": 1,
+        "studentInfo.userId": 1,
       },
     },
 
