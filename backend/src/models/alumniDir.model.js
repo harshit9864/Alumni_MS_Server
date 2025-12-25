@@ -14,6 +14,10 @@ const alumniDirSchema = new mongoose.Schema(
       type: String,
       required: true,
     },
+    college: {
+      type: String,
+      required: true,
+    },
     currentProfession: {
       type: String,
       required: true,

@@ -26,6 +26,10 @@ const studentSchema = new mongoose.Schema(
         required: true,
       },
     ],
+    organisationName: {
+      type: String,
+      required: true,
+    },
   },
   { timestamps: true }
 );

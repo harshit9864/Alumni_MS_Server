@@ -7,6 +7,7 @@ import {
   joinEvent,
   fetchMentorships,
   updateStatus,
+  fetchEvent,
 } from "../controllers/alumni.controller.js";
 
 const router = Router();
@@ -16,5 +17,6 @@ router.route("/blogs").get(clerkMiddleware(), fetchBlogs);
 router.route("/join-event").post(clerkMiddleware(), joinEvent);
 router.route("/mentorships").get(clerkMiddleware(), fetchMentorships);
 router.route("/mentorships/:id/status").patch(clerkMiddleware(), updateStatus);
+router.route("/fetchEvents").get(clerkMiddleware(),fetchEvent)
 
 export default router;

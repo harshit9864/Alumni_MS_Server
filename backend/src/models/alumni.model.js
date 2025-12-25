@@ -1,4 +1,4 @@
-import mongoose from "mongoose";
+import mongoose, { mongo } from "mongoose";
 
 const alumniSchema = new mongoose.Schema(
   {
@@ -25,6 +25,7 @@ const alumniSchema = new mongoose.Schema(
         ref: "Mentorship",
       },
     ],
+    blogs: [{ type: mongoose.Schema.Types.ObjectId, ref: "Blog" }],
   },
   { timestamps: true }
 );

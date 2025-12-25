@@ -6,9 +6,12 @@ import asyncHandler from "../utils/asyncHandler.js";
 import { Mentorship } from "../models/mentorship.model.js";
 import { sendEmail } from "../utils/sendEmail.js";
 import { User } from "../models/user.model.js";
+import { AlumniDir } from "../models/alumniDir.model.js";
+import { Event } from "../models/event.model.js";
 
 const saveAndFetch = asyncHandler(async (req, res) => {
   const { userId, sessionClaims } = req.auth();
+  console.log(req.auth());
   let user = await Alumni.findOne({ clerkId: userId });
   if (!user) {
     user = await Alumni.create({
@@ -39,7 +42,7 @@ const saveAndFetch = asyncHandler(async (req, res) => {
 
 const postBlog = asyncHandler(async (req, res) => {
   const { title, authorName, date, image, summary, content } = req.body;
-  const { userId } = req.auth();
+  const { userId, sessionClaims } = req.auth();
   if (
     [title, authorName, date, summary, content].some(
       (field) => field?.trim() === ""
@@ -47,35 +50,62 @@ const postBlog = asyncHandler(async (req, res) => {
   ) {
     throw new ApiError(400, "All fields are required");
   }
-  // const userId = 123;
+  const alumniDir = await AlumniDir.findOne({
+    email: sessionClaims.emailAddress,
+  });
+  const college = alumniDir.college;
 
   const blog = await Blog.create({
     title,
     authorId: userId,
     authorName: authorName.toUpperCase(),
-    date: new Date(date),
+    date: new Date(date).getDate,
     image: image?.url,
     summary,
     content,
+    college,
   });
 
   if (!blog) {
     throw new ApiError(400, "some error occured");
   }
+  const alumni = await Alumni.findOneAndUpdate(
+    {
+      clerkId: userId,
+    },
+    { $push: { blogs: blog._id } },
+    { new: true }
+  );
 
   res.status(200).json(new Apiresponse(201, blog, "blog posted succesfully"));
 });
 
 const fetchBlogs = asyncHandler(async (req, res) => {
   const { userId, sessionClaims } = req.auth();
-  // const user = await clerkClient.users.getUser(userId);
-  console.log(sessionClaims.emailAddress);
 
   const blogs = await Blog.find({
     authorId: userId,
   });
 
   res.status(200).json(new Apiresponse(201, blogs, "success"));
+});
+
+const fetchEvent = asyncHandler(async (req, res) => {
+  const { userId, sessionClaims } = req.auth();
+  // const alumni = await Alumni.findOne({ clerkId: userId });
+  const alumniDir = await AlumniDir.findOne({
+    email: sessionClaims.emailAddress,
+  });
+  console.log(alumniDir);
+  const today = new Date();
+  const college = alumniDir.college;
+  const events = await Event.find({
+    date: { $gte: today },
+    college,
+  });
+  res
+    .status(200)
+    .json(new Apiresponse(201, events, "Events found successfully"));
 });
 
 const joinEvent = asyncHandler(async (req, res) => {
@@ -193,6 +223,7 @@ export {
   saveAndFetch,
   postBlog,
   fetchBlogs,
+  fetchEvent,
   joinEvent,
   fetchMentorships,
   updateStatus,

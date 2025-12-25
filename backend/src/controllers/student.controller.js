@@ -6,13 +6,14 @@ import { ApiError } from "../utils/apiError.js";
 import { Apiresponse } from "../utils/apiResponse.js";
 import asyncHandler from "../utils/asyncHandler.js";
 import { User } from "../models/user.model.js";
+import { Blog } from "../models/blog.model.js";
 
 const addstudent = asyncHandler(async (req, res) => {
   const { userId } = req.auth();
   if (!userId) {
     throw new ApiError(401, "user not authenticated");
   }
-  const { fullName, passoutYear, email, interests } = req.body;
+  const { fullName, passoutYear, email, interests, college } = req.body;
 
   const student = await Student.create({
     fullName,
@@ -20,6 +21,7 @@ const addstudent = asyncHandler(async (req, res) => {
     passoutYear,
     interests,
     email,
+    organisationName: college,
   });
 
   const user = await User.findOne({ userId });
@@ -84,7 +86,6 @@ const fetchMentorships = asyncHandler(async (req, res) => {
     clerkId: userId,
   });
   const studentId = student._id;
-  
 
   // Ensure it's a valid ObjectId
   if (!mongoose.Types.ObjectId.isValid(studentId)) {
@@ -180,4 +181,14 @@ const fetchMentorships = asyncHandler(async (req, res) => {
     );
 });
 
-export { addstudent, addMentorship, fetchMentorships };
+const fetchBlogs = asyncHandler(async (req, res) => {
+  const { userId } = req.auth();
+  const student = await Student.findOne({ clerkId: userId });
+  const { organisationName } = student;
+  console.log(student);
+  const blogs = await Blog.find({ college: organisationName });
+  console.log(blogs);
+  res.status(201).json(new Apiresponse(201, blogs, "fetched"));
+});
+
+export { addstudent, addMentorship, fetchMentorships, fetchBlogs };
