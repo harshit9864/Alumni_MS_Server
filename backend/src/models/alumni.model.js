@@ -13,6 +13,10 @@ const alumniSchema = new mongoose.Schema(
       type: String,
       required: true,
     },
+    college: {
+      type: String,
+      required: true,
+    },
     eventsJoined: [
       {
         type: mongoose.Schema.Types.ObjectId,

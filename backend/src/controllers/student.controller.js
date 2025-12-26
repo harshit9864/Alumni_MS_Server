@@ -78,7 +78,7 @@ const addMentorship = asyncHandler(async (req, res) => {
 
 const fetchMentorships = asyncHandler(async (req, res) => {
   const { userId } = req.auth();
-  console.log(userId);
+  // console.log(userId);
   if (!userId) {
     throw new ApiError(401, "not authenticated");
   }
@@ -172,7 +172,7 @@ const fetchMentorships = asyncHandler(async (req, res) => {
       },
     },
   ]);
-  console.log(mentorships);
+  // console.log(mentorships);
 
   res
     .status(200)

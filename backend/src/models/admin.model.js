@@ -16,6 +16,10 @@ const adminSchema = new mongoose.Schema(
     city: {
       type: String,
     },
+    email: {
+      type: String,
+      required: true,
+    },
   },
   { timestamps: true }
 );

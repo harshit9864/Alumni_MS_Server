@@ -7,13 +7,14 @@ import { Admin } from "../models/admin.model.js";
 import { Student } from "../models/student.model.js";
 
 const addAdmin = asyncHandler(async (req, res) => {
-  const { userId } = req.auth();
+  const { userId, sessionClaims } = req.auth();
   const { college, state, city } = req.body;
   const admin = await Admin.create({
     clerkId: userId,
-    organisationName: college,
+    organisationName: college.toUpperCase(),
     state,
     city,
+    email: sessionClaims.emailAddress,
   });
   res.status(201).json(new Apiresponse(201, admin, "Admin added succesfully"));
 });
@@ -96,12 +97,12 @@ const fetchDirec = asyncHandler(async (req, res) => {
 
 const totalAlumni = asyncHandler(async (req, res) => {
   const { userId, sessionClaims } = req.auth();
-  console.log(sessionClaims);
   const admin = await Admin.findOne({ clerkId: userId });
   const college = admin.organisationName;
   const totalAlumni = await AlumniDir.countDocuments({ college });
   const currentEvents = await Event.countDocuments({
     date: { $gte: new Date() },
+    college
   });
 
   res

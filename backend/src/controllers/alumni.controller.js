@@ -11,12 +11,17 @@ import { Event } from "../models/event.model.js";
 
 const saveAndFetch = asyncHandler(async (req, res) => {
   const { userId, sessionClaims } = req.auth();
-  console.log(req.auth());
+  console.log(sessionClaims);
   let user = await Alumni.findOne({ clerkId: userId });
+  const alumni = await AlumniDir.findOne({ email: sessionClaims.emailAddress });
+  console.log(alumni);
+  const email = sessionClaims.emailAddress;
+
   if (!user) {
     user = await Alumni.create({
       clerkId: userId,
-      email: sessionClaims.emailAddress,
+      email,
+      college: alumni.college,
     });
   }
 
@@ -25,7 +30,7 @@ const saveAndFetch = asyncHandler(async (req, res) => {
     const newUser = await User.create({
       clerkId: userId,
       fullName: sessionClaims.emailAddress,
-      email: sessionClaims.emailAddress,
+      email,
       role: "alumni", // student or alumni
     });
 
@@ -34,7 +39,6 @@ const saveAndFetch = asyncHandler(async (req, res) => {
       { userId: newUser._id },
       { new: true }
     );
-    3;
   }
 
   res.status(200).json(new Apiresponse(201, user, "user created"));
