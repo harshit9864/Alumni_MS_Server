@@ -9,14 +9,17 @@ import {
   updateStatus,
   fetchEvent,
 } from "../controllers/alumni.controller.js";
+import { upload } from "../middlewares/multer.js";
 
 const router = Router();
 router.route("/sync").get(clerkMiddleware(), saveAndFetch);
-router.route("/post-blog").post(clerkMiddleware(), postBlog);
+router
+  .route("/post-blog")
+  .post(clerkMiddleware(), upload.single("image"), postBlog);
 router.route("/blogs").get(clerkMiddleware(), fetchBlogs);
 router.route("/join-event").post(clerkMiddleware(), joinEvent);
 router.route("/mentorships").get(clerkMiddleware(), fetchMentorships);
 router.route("/mentorships/:id/status").patch(clerkMiddleware(), updateStatus);
-router.route("/fetchEvents").get(clerkMiddleware(),fetchEvent)
+router.route("/fetchEvents").get(clerkMiddleware(), fetchEvent);
 
 export default router;

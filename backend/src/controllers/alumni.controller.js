@@ -8,6 +8,7 @@ import { sendEmail } from "../utils/sendEmail.js";
 import { User } from "../models/user.model.js";
 import { AlumniDir } from "../models/alumniDir.model.js";
 import { Event } from "../models/event.model.js";
+import { uploadOnCloudinary } from "../utils/cloudinary.js";
 
 const saveAndFetch = asyncHandler(async (req, res) => {
   const { userId, sessionClaims } = req.auth();
@@ -45,43 +46,69 @@ const saveAndFetch = asyncHandler(async (req, res) => {
 });
 
 const postBlog = asyncHandler(async (req, res) => {
-  const { title, authorName, date, image, summary, content } = req.body;
+  const { title, authorName, date, summary, content } = req.body;
   const { userId, sessionClaims } = req.auth();
+
+  // 1. Validate Text Fields
   if (
     [title, authorName, date, summary, content].some(
       (field) => field?.trim() === ""
     )
   ) {
-    throw new ApiError(400, "All fields are required");
+    throw new ApiError(400, "All text fields are required");
   }
+
+  // 2. Handle Optional Image
+  let imageUrl = ""; // Default to empty string or a placeholder URL if you prefer
+  const imageLocalPath = req.file?.path;
+
+  if (imageLocalPath) {
+    const uploadedImage = await uploadOnCloudinary(imageLocalPath);
+
+    // Only throw error if we TRIED to upload but it failed
+    if (!uploadedImage) {
+      throw new ApiError(500, "Failed to upload image to Cloudinary");
+    }
+
+    imageUrl = uploadedImage.url;
+  }
+
+  // 3. Get College Info
   const alumniDir = await AlumniDir.findOne({
     email: sessionClaims.emailAddress,
   });
+
+  // Safety check: ensure alumniDir exists
+  if (!alumniDir) {
+    throw new ApiError(404, "Alumni record not found");
+  }
+
   const college = alumniDir.college;
 
+  // 4. Create Blog
   const blog = await Blog.create({
     title,
     authorId: userId,
     authorName: authorName.toUpperCase(),
-    date: new Date(date).getDate,
-    image: image?.url,
+    date,
+    image: imageUrl, // Will be "" if no image uploaded
     summary,
     content,
     college,
   });
 
   if (!blog) {
-    throw new ApiError(400, "some error occured");
+    throw new ApiError(500, "Something went wrong while creating the blog");
   }
-  const alumni = await Alumni.findOneAndUpdate(
-    {
-      clerkId: userId,
-    },
+
+  // 5. Link Blog to Alumni
+  await Alumni.findOneAndUpdate(
+    { clerkId: userId },
     { $push: { blogs: blog._id } },
     { new: true }
   );
 
-  res.status(200).json(new Apiresponse(201, blog, "blog posted succesfully"));
+  res.status(200).json(new Apiresponse(201, blog, "Blog posted successfully"));
 });
 
 const fetchBlogs = asyncHandler(async (req, res) => {

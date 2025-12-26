@@ -9,6 +9,8 @@ import messageRouter from "./routes/messages.route.js";
 const app = express();
 app.use(cors());
 app.use(express.json());
+app.use(express.static("public"));
+
 
 app.use("/api", adminRouter);
 app.use("/events", eventRouter);
