@@ -15,6 +15,9 @@ const saveAndFetch = asyncHandler(async (req, res) => {
   console.log(sessionClaims);
   let user = await Alumni.findOne({ clerkId: userId });
   const alumni = await AlumniDir.findOne({ email: sessionClaims.emailAddress });
+  if (!alumni) {
+    throw new ApiError(401, "alumni not added by admin");
+  }
   console.log(alumni);
   const email = sessionClaims.emailAddress;
 

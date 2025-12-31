@@ -10,6 +10,10 @@ export const initSocket = (httpServer) => {
     },
   });
 
+  // Store active connections: { userId, socketId }
+  let onlineUsers = [];
+
+  // Middleware: Authentication & Room Joining
   io.use(async (socket, next) => {
     try {
       const { clerkId } = socket.handshake.auth;
@@ -19,7 +23,7 @@ export const initSocket = (httpServer) => {
       if (!user) return next(new Error("User not found"));
 
       socket.userId = user._id.toString();
-      socket.join(socket.userId); // personal room
+      socket.join(socket.userId); // Join personal room for 1-on-1 messages
       next();
     } catch (err) {
       next(err);
@@ -29,6 +33,18 @@ export const initSocket = (httpServer) => {
   io.on("connection", (socket) => {
     console.log("Socket connected:", socket.userId);
 
+    // 🟢 1. ADD USER TO ONLINE LIST
+    // We push every connection. If a user has 2 tabs open, they will be in the list twice.
+    // This ensures they stay "Online" until the last tab is closed.
+    onlineUsers.push({
+      userId: socket.userId,
+      socketId: socket.id,
+    });
+
+    // 🟢 2. BROADCAST ONLINE LIST TO EVERYONE
+    io.emit("get_online_users", onlineUsers);
+
+    // 📩 Handle Message Sending
     socket.on("send_message", async ({ toUserId, text }) => {
       const conversationId = [socket.userId, toUserId].sort().join("_");
 
@@ -39,7 +55,7 @@ export const initSocket = (httpServer) => {
         conversationId,
       });
 
-      // Send to receiver if online
+      // Send to receiver (if they are in their room)
       io.to(toUserId).emit("receive_message", {
         _id: message._id,
         sender: socket.userId,
@@ -48,12 +64,19 @@ export const initSocket = (httpServer) => {
         createdAt: message.createdAt,
       });
 
-      // Send back to sender (confirmation)
+      // Send confirmation back to sender
       socket.emit("message_sent", message);
     });
 
+    // 🔴 3. HANDLE DISCONNECT
     socket.on("disconnect", () => {
       console.log("Socket disconnected:", socket.userId);
+
+      // Remove ONLY this specific socket connection
+      onlineUsers = onlineUsers.filter((user) => user.socketId !== socket.id);
+
+      // Broadcast the updated list
+      io.emit("get_online_users", onlineUsers);
     });
   });
 
