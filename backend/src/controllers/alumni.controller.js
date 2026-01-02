@@ -115,7 +115,7 @@ const postBlog = asyncHandler(async (req, res) => {
 });
 
 const fetchBlogs = asyncHandler(async (req, res) => {
-  const { userId, sessionClaims } = req.auth();
+  const { userId } = req.auth();
 
   const blogs = await Blog.find({
     authorId: userId,
@@ -253,6 +253,53 @@ const updateStatus = asyncHandler(async (req, res) => {
     .json(new Apiresponse(201, updatedMentorship, "updated Successfully"));
 });
 
+const endMentorship = asyncHandler(async (req, res) => {
+  const { id } = req.params;
+  const { userId } = req.auth();
+  const updatedMentorship = await Mentorship.findByIdAndUpdate(
+    id,
+    { status: "ended" },
+    { new: true }
+  );
+  await Alumni.findOneAndUpdate(
+    { clerkId: userId },
+    {
+      $pull: { blogs: id },
+    }
+  );
+  res.status(200).json(new Apiresponse(201, updatedMentorship, "succesful"));
+});
+
+const editBlog = asyncHandler(async (req, res) => {
+  const { id } = req.params;
+
+  const { title, summary } = req.body;
+  const updatedBlog = await Blog.findByIdAndUpdate(
+    id,
+    { title, summary },
+    { new: true }
+  );
+  if (!updatedBlog) {
+    throw new ApiError(400, "error occured in updating blog");
+  }
+  res
+    .status(200)
+    .json(new Apiresponse(201, updatedBlog, "updated succesfully"));
+});
+
+const deleteBlog = asyncHandler(async (req, res) => {
+  const { id } = req.params;
+  const { userId } = req.auth();
+  await Blog.findByIdAndDelete(id);
+  await Alumni.findOneAndUpdate(
+    { clerkId: userId },
+    {
+      $pull: { blogs: id },
+    }
+  );
+  res.status(201).json(new Apiresponse(201, null, "deleted"));
+});
+
 export {
   saveAndFetch,
   postBlog,
@@ -261,4 +308,7 @@ export {
   joinEvent,
   fetchMentorships,
   updateStatus,
+  endMentorship,
+  editBlog,
+  deleteBlog,
 };

@@ -20,7 +20,7 @@ const mentorshipSchema = new mongoose.Schema(
     },
     status: {
       type: String,
-      enum: ["accepted", "pending", "declined"],
+      enum: ["accepted", "pending", "declined","ended"],
       default: "pending",
     },
   },
