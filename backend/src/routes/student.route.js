@@ -1,4 +1,4 @@
-import { clerkMiddleware } from "@clerk/express";
+import { requireAuth } from "@clerk/express";
 import { Router } from "express";
 import {
   addMentorship,
@@ -9,8 +9,8 @@ import {
 
 const router = Router();
 
-router.route("/form").post(clerkMiddleware(), addstudent);
-router.route("/mentorship").post(clerkMiddleware(), addMentorship);
-router.route("/profile").get(clerkMiddleware(), fetchMentorships);
-router.route("/blogs").get(clerkMiddleware(), fetchBlogs);
+router.route("/form").post(requireAuth(), addstudent);
+router.route("/mentorship").post(requireAuth(), addMentorship);
+router.route("/profile").get(requireAuth(), fetchMentorships);
+router.route("/blogs").get(requireAuth(), fetchBlogs);
 export default router;

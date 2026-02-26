@@ -5,6 +5,25 @@ import { Apiresponse } from "../utils/apiResponse.js";
 import { Event } from "../models/event.model.js";
 import { Admin } from "../models/admin.model.js";
 import { Student } from "../models/student.model.js";
+import { createClient } from "redis";
+
+const client = createClient({
+    username: 'default',
+    password: 'XIAHJ4t5NWvqbj73XhH98FZe74dDcXkj',
+    socket: {
+        host: 'redis-17268.c15.us-east-1-2.ec2.cloud.redislabs.com',
+        port: 17268
+    }
+});
+client.on("error", (err) => console.log("Redis Client Error (Backend will run without cache):", err.message));
+(async () => {
+  try {
+    await client.connect();
+    console.log("Connected to Redis Cache Successfully!");
+  } catch (error) {
+    console.error("Redis Connection Failed:", error.message);
+  }
+})();
 
 const addAdmin = asyncHandler(async (req, res) => {
   const { userId, sessionClaims } = req.auth();
@@ -36,6 +55,9 @@ const addAlumni = asyncHandler(async (req, res) => {
   }
 
   const admin = await Admin.findOne({ clerkId: userId });
+  if (!admin) {
+    throw new ApiError(404, "Admin not found. Please complete your registration.");
+  }
   const college = admin.organisationName;
   console.log(college);
   let newAlumni = await AlumniDir.create({
@@ -49,6 +71,11 @@ const addAlumni = asyncHandler(async (req, res) => {
 
   const count = await AlumniDir.countDocuments({ college });
   newAlumni = { ...newAlumni.toObject(), totalAlumni: count };
+
+  // Invalidate cache after adding alumni
+  if (client.isReady) {
+    await client.del(`alumni_dir_${college}`);
+  }
 
   res
     .status(200)
@@ -65,6 +92,9 @@ const postEvent = asyncHandler(async (req, res) => {
   }
   const admin = await Admin.findOne({ clerkId: userId });
   console.log(admin);
+  if (!admin) {
+    throw new ApiError(404, "Admin not found. Please complete your registration.");
+  }
   const college = admin.organisationName;
 
   const event = await Event.create({
@@ -80,6 +110,7 @@ const postEvent = asyncHandler(async (req, res) => {
 
 const fetchDirec = asyncHandler(async (req, res) => {
   const { userId } = req.auth();
+  console.log(req.auth())
   const role = req.headers["role"];
   let entity;
   let college;
@@ -88,16 +119,49 @@ const fetchDirec = asyncHandler(async (req, res) => {
   } else {
     entity = await Student.findOne({ clerkId: userId });
   }
+
+  if (!entity) {
+    throw new ApiError(404, "User profile not found. Please complete your registration.");
+  }
   college = entity.organisationName;
+
+  const cacheKey = `alumni_dir_${college}`;
+
+  if (client.isReady) {
+    try {
+      const cachedData = await client.get(cacheKey);
+      if (cachedData) {
+        return res
+          .status(200)
+          .json(new Apiresponse(201, JSON.parse(cachedData), "Alumnis fetched successfully from cache"));
+      }
+    } catch (error) {
+      console.error("Redis get error:", error);
+    }
+  }
+
   const alumnis = await AlumniDir.find({ college });
+
+  if (client.isReady) {
+    try {
+      await client.setEx(cacheKey, 3600, JSON.stringify(alumnis));
+    } catch (error) {
+      console.error("Redis set error:", error);
+    }
+  }
+
   res
     .status(200)
     .json(new Apiresponse(201, alumnis, "Alumnis fetched succesfully"));
 });
 
 const totalAlumni = asyncHandler(async (req, res) => {
-  const { userId, sessionClaims } = req.auth();
+  const {userId} = req.auth();
+  console.log(req.auth())
   const admin = await Admin.findOne({ clerkId: userId });
+  if (!admin) {
+    throw new ApiError(404, "Admin not found. Please complete your registration.");
+  }
   const college = admin.organisationName;
   const totalAlumni = await AlumniDir.countDocuments({ college });
   const currentEvents = await Event.countDocuments({
@@ -120,13 +184,25 @@ const editAlumni = asyncHandler(async (req, res) => {
     { fullName, batchYear, currentProfession, company, email },
     { new: true }
   );
-  res.status(201).json(201, alumni, "successfully edited alumni data");
+
+  // Invalidate cache after editing alumni
+  if (alumni && client.isReady) {
+    await client.del(`alumni_dir_${alumni.college}`);
+  }
+
+  res.status(201).json(new Apiresponse(201, alumni, "successfully edited alumni data"));
 });
 
 const deleteAlumni = asyncHandler(async (req, res) => {
   const { id } = req.params;
-  await AlumniDir.findByIdAndDelete(id);
-  res.status(201).json(200, null, "succesfully deleted alumni");
+  const alumni = await AlumniDir.findByIdAndDelete(id);
+
+  // Invalidate cache after deleting alumni
+  if (alumni && client.isReady) {
+    await client.del(`alumni_dir_${alumni.college}`);
+  }
+
+  res.status(200).json(new Apiresponse(200, null, "succesfully deleted alumni"));
 });
 
 const editEvent = asyncHandler(async (req, res) => {

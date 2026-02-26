@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { clerkMiddleware } from "@clerk/express";
+import { requireAuth } from "@clerk/express";
 import {
   postBlog,
   saveAndFetch,
@@ -13,19 +13,24 @@ import {
   deleteBlog,
 } from "../controllers/alumni.controller.js";
 import { upload } from "../middlewares/multer.js";
+import { createOrder, verifyPayment } from "../controllers/donate.controller.js";
 
 const router = Router();
-router.route("/sync").get(clerkMiddleware(), saveAndFetch);
+router.route("/sync").get(requireAuth(), saveAndFetch);
 router
   .route("/post-blog")
-  .post(clerkMiddleware(), upload.single("image"), postBlog);
-router.route("/blogs").get(clerkMiddleware(), fetchBlogs);
-router.route("/join-event").post(clerkMiddleware(), joinEvent);
-router.route("/mentorships").get(clerkMiddleware(), fetchMentorships);
-router.route("/mentorships/:id").patch(clerkMiddleware(), updateStatus);
+  .post(requireAuth(), upload.single("image"), postBlog);
+router.route("/blogs").get(requireAuth(), fetchBlogs);
+router.route("/join-event").post(requireAuth(), joinEvent);
+router.route("/mentorships").get(requireAuth(), fetchMentorships);
+router.route("/mentorships/:id").patch(requireAuth(), updateStatus);
 router.route("/mentorships/end/:id").patch(endMentorship);
-router.route("/fetchEvents").get(clerkMiddleware(), fetchEvent);
+router.route("/fetchEvents").get(requireAuth(), fetchEvent);
 router.route("/edit-blog/:id").patch(editBlog);
 router.route("/delete-blog/:id").delete(deleteBlog);
+router.route("/create-order").post(createOrder);
+router.route("/create-order").post(createOrder);
+router.route("/verify-order").post(requireAuth(),verifyPayment);
+
 
 export default router;

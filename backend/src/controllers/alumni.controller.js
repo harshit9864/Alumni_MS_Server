@@ -12,7 +12,7 @@ import { uploadOnCloudinary } from "../utils/cloudinary.js";
 
 const saveAndFetch = asyncHandler(async (req, res) => {
   const { userId, sessionClaims } = req.auth();
-  console.log(sessionClaims);
+  console.log(req.auth());
   let user = await Alumni.findOne({ clerkId: userId });
   const alumni = await AlumniDir.findOne({ email: sessionClaims.emailAddress });
   if (!alumni) {
