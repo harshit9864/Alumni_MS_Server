@@ -8,9 +8,14 @@ import studentRouter from "./routes/student.route.js";
 import messageRouter from "./routes/messages.route.js";
 
 const app = express();
+const allowedOrigins = [
+  "https://alumni-ms-client.vercel.app", 
+  "http://localhost:3000"
+];
+
 app.use(cors({
-  origin: "http://localhost:3000",
-  credentials: true,
+  origin: allowedOrigins,
+  credentials: true
 }));
 app.use(express.json());
 app.use(express.static("public"));
