@@ -3,9 +3,14 @@ import { Message } from "./models/message.model.js";
 import { User } from "./models/user.model.js";
 
 export const initSocket = (httpServer) => {
+  const allowedOrigins = [
+    "https://alumni-ms-client.vercel.app",
+    "http://localhost:3000"
+  ];
+
   const io = new Server(httpServer, {
     cors: {
-      origin: "http://localhost:3000",
+      origin: allowedOrigins,
       credentials: true,
     },
   });
