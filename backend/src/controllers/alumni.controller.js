@@ -41,7 +41,7 @@ const saveAndFetch = asyncHandler(async (req, res) => {
     await Alumni.findOneAndUpdate(
       { email },
       { userId: newUser._id },
-      { new: true }
+      { new: true },
     );
   }
 
@@ -55,7 +55,7 @@ const postBlog = asyncHandler(async (req, res) => {
   // 1. Validate Text Fields
   if (
     [title, authorName, date, summary, content].some(
-      (field) => field?.trim() === ""
+      (field) => field?.trim() === "",
     )
   ) {
     throw new ApiError(400, "All text fields are required");
@@ -108,7 +108,7 @@ const postBlog = asyncHandler(async (req, res) => {
   await Alumni.findOneAndUpdate(
     { clerkId: userId },
     { $push: { blogs: blog._id } },
-    { new: true }
+    { new: true },
   );
 
   res.status(200).json(new Apiresponse(201, blog, "Blog posted successfully"));
@@ -151,7 +151,7 @@ const joinEvent = asyncHandler(async (req, res) => {
     const alumni = await Alumni.findOneAndUpdate(
       { clerkId: userId },
       { $addToSet: { eventsJoined: _id } }, // $addToSet prevents duplicates
-      { new: true }
+      { new: true },
     );
     if (!alumni) {
       throw new Error(alumni);
@@ -215,7 +215,7 @@ const fetchMentorships = asyncHandler(async (req, res) => {
   res
     .status(200)
     .json(
-      new Apiresponse(201, mentorships, "Mentorships successfully fetched")
+      new Apiresponse(201, mentorships, "Mentorships successfully fetched"),
     );
 });
 
@@ -228,7 +228,7 @@ const updateStatus = asyncHandler(async (req, res) => {
   const updatedMentorship = await Mentorship.findByIdAndUpdate(
     id,
     { status },
-    { new: true }
+    { new: true },
   ).populate("studentName");
 
   const alumni = await Alumni.findOneAndUpdate(
@@ -236,17 +236,20 @@ const updateStatus = asyncHandler(async (req, res) => {
       clerkId: userId,
     },
     { $push: { mentorship: id } },
-    { new: true }
+    { new: true },
   );
 
   const studentEmail = updatedMentorship.studentName.email;
   const studentName = updatedMentorship.studentName.fullName;
 
-  await sendEmail(
+  // Send email asynchronously without blocking the response
+  sendEmail(
     studentEmail,
     `Your Mentorship Request Was ${status}`,
-    `Hi ${studentName},\n\nYour mentorship request has been ${status} by the ${alumni.email}.\n\nPurpose: ${updatedMentorship.purpose}\n\nBest regards,\nMentorship Team`
-  );
+    `Hi ${studentName},\n\nYour mentorship request has been ${status} by the ${alumni.email}.\n\nPurpose: ${updatedMentorship.purpose}\n\nBest regards,\nMentorship Team`,
+  ).catch((error) => {
+    console.error("Failed to send email:", error);
+  });
 
   res
     .status(200)
@@ -259,13 +262,13 @@ const endMentorship = asyncHandler(async (req, res) => {
   const updatedMentorship = await Mentorship.findByIdAndUpdate(
     id,
     { status: "ended" },
-    { new: true }
+    { new: true },
   );
   await Alumni.findOneAndUpdate(
     { clerkId: userId },
     {
       $pull: { blogs: id },
-    }
+    },
   );
   res.status(200).json(new Apiresponse(201, updatedMentorship, "succesful"));
 });
@@ -277,7 +280,7 @@ const editBlog = asyncHandler(async (req, res) => {
   const updatedBlog = await Blog.findByIdAndUpdate(
     id,
     { title, summary },
-    { new: true }
+    { new: true },
   );
   if (!updatedBlog) {
     throw new ApiError(400, "error occured in updating blog");
@@ -295,7 +298,7 @@ const deleteBlog = asyncHandler(async (req, res) => {
     { clerkId: userId },
     {
       $pull: { blogs: id },
-    }
+    },
   );
   res.status(201).json(new Apiresponse(201, null, "deleted"));
 });
